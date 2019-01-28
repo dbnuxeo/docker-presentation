@@ -1,10 +1,11 @@
 ![Docker logo](https://raw.githubusercontent.com/theodorosploumis/docker-presentation/gh-pages/img/docker_logo.png)
 
-## Docker for Developers - Introduction
+## Docker for Nuxeo Presales - Introduction
 
-#### [Python Meetup Thessaloniki](http://www.meetup.com/PyThess/), 15 April 2016
+#### Docker made Easy
 
-###### [TheodorosPloumis.com](http://www.theodorosploumis.com/en) / [@theoploumis](http://twitter.com/theoploumis)
+###### Slide content from: [TheodorosPloumis.com](http://www.theodorosploumis.com/en) / [@theoploumis](http://twitter.com/theoploumis)
+
 ________________________
 
 ###### Get them: [online presentation](http://theodorosploumis.github.io/docker-presentation/) / [source code](https://github.com/theodorosploumis/docker-presentation) / [docker image](https://hub.docker.com/r/tplcom/docker-presentation/)
@@ -32,7 +33,9 @@ ________________________
 
 ### Docker vs VMs
 
+<div style="background:white">
 ![Docker vs traditional Virtualization](https://insights.sei.cmu.edu/assets/content/VM-Diagram.png)
+</div>
 
 ---
 
@@ -91,22 +94,21 @@ ________________________
 
 ---
 
-### The Docker architecture
+### The Docker Architecture
 
-![Docker architecture](https://docs.docker.com/engine/article-img/architecture.svg)
+![Docker Architecture](https://docs.docker.com/engine/images/architecture.svg)
+
 ###### See more at [Understanding docker](https://docs.docker.com/engine/understanding-docker/)
 
 ---
 
-### Docker components
+### The Docker Components
 
- - (Docker) client
- - daemon
- - engine
- - machine
- - compose
- - swarm
- - registry
+![Docker Components](https://docs.docker.com/engine/images/engine-components-flow.png)
+
+###### [Docker overview](https://docs.docker.com/engine/docker-overview/)
+
+###### client / daemon / engine / machine / compose / swarm / registry
 
 ---
 
@@ -183,15 +185,15 @@ docker run -i -t -d ubuntu:15.04 /bin/bash
 
 ---
 
-### The docker image
+### The Docker Image
 
-![ubuntu:15.04 image](https://docs.docker.com/engine/userguide/storagedriver/images/image-layers.jpg "A read-only layer that is the base of your container. It can have a parent image to abstract away the more basic filesystem snapshot. Each Docker image references a list of read-only layers that represent filesystem differences. Layers are stacked on top of each other to form a base for a container’s root filesystem.")
+>"A read-only layer that is the base of your container. It can have a parent image to abstract away the more basic filesystem snapshot. Each Docker image references a list of read-only layers that represent filesystem differences. Layers are stacked on top of each other to form a base for a container's root filesystem."
 
 ---
 
-### The docker container
+### The Docker Container
 
-![container using ubuntu:15.04 image](https://docs.docker.com/engine/userguide/storagedriver/images/container-layers.jpg "A runnable instance of the image, basically it is a process isolated by docker that runs on top of the filesystem that an image provides. For each containers there is a new, thin, writable layer - container layer - on top of the underlying stack (image).")
+>"A runnable instance of the image, basically it is a process isolated by docker that runs on top of the filesystem that an image provides. For each containers there is a new, thin, writable layer - container layer - on top of the underlying stack (image)."
 
 ---
 
@@ -230,6 +232,70 @@ docker inspect [CONTAINER]
 docker inspect -f "{{ .State.StartedAt }}" [CONTAINER]
 docker rm [CONTAINER]
 
+// [CONTAINER] can be the name or the hash
+```
+
+
+---
+
+### Docker Images
+
+_Typically_, Docker images contain:
+
+- **Entry Point**: A script that kicks off one or more services
+- **Well-known Locations**: Hooks (directories, scripts, etc) inside the container that allow external volumes to mount initialization scripts, configuration, etc.
+- **Environment**: Passed in via host command-line argument (see docker hub)
+- **Mountable volumes**: External or logical volumes that persist data across container restarts
+
+> Check their Dockerfile on hub.docker.com
+
+---
+
+### Nuxeo Docker Image
+
+[Nuxeo Docker Image](https://hub.docker.com/_/nuxeo)
+
+- Image: nuxeo:${VERSION}
+- Entry Point: /docker-entrypoint-initnuxeo.d/
+- Port: 8080
+
+Volumes:
+
+- Data: /var/lib/nuxeo/data
+
+> Pro tip: Image pulls will be cached, use `docker pull nuxeo:${version}` to get the latest build from the repo when released.
+
+---
+
+### Nuxeo Docker Image (Quirks)
+
+When using the vanilla Nuxeo Docker image:
+
+- Most everything can be configured via environment variables.  The syntax is often funky (and there's probably a better way to achieve your goal)
+- CLID generation must be done on Connect or via a script.
+- Externally mounted volumes can be slow on Mac, Windows. (Check out [Docker Sync](https://docker-sync.io/))
+
+---
+
+### Nuxeo Docker Image (Best Practices)
+
+Be smart, use Compose and some helper scripts:
+
+- Start with: https://github.com/nuxeo-sandbox/nuxeo-presales-docker
+- Configure your environment files (.env)
+- Tweak `0_register.sh` if you need to do something special
+- Add any custom ZIP packages or config.xml to `init`
+
+---
+
+### Nuxeo with Sync
+
+> Changing content with mounted volumes can be slow for Windows and macOS for Docker.  When running containers on these platforms, you're actually running a Linux virtual machine under the covers.  [Docker Sync](https://docker-sync.io/)) helps to speed up synchronization of content.
+
+**Use Case**: Using Nuxeo CLI with Docker Sync to quickly iterate on UI changes for your project.  See the Nuxeo Docker Presales project for an example docker-sync configuration.
+
+```
+nuxeo sync [--src resources/ui] [--dest nuxeo/nxserver/nuxeo.war/ui]
 ```
 
 ---
@@ -253,6 +319,12 @@ docker rm [CONTAINER]
 ```
 docker pull ubuntu
 docker run -it --name ubuntu_example ubuntu /bin/bash
+```
+
+Alternative shell: `/bin/sh`
+
+```
+docker-compose exec nuxeo bash
 ```
 
 ---
@@ -348,6 +420,17 @@ cd docker-presentation/examples/docker-compose
 cat docker-compose.yml
 docker-compose up -d
 ```
+
+---
+
+### Compose is your Friend
+
+[More Info](http://localhost:8060/compose.html#/4)
+
+- [Compose](https://docs.docker.com/compose/overview/) File (docker-compose.yml)
+- [Environment File](https://docs.docker.com/compose/env-file/) (.env)
+  - Environment variables must be mapped in `docker-compose.yml` in order to be visible to the container
+- Initialization Scripts (init/* directory)
 
 ---
 
@@ -510,16 +593,9 @@ There are known best practices (see a list at [examples/tips](https://github.com
 
 ### Questions?
 
-![Pythons over Docker!](https://raw.githubusercontent.com/theodorosploumis/docker-presentation/gh-pages/img/docker_logo.png)
-
 [Review this presentation](https://goo.gl/lkau9t)
 
 > Next: Docker in production, Scaling, Private registries, PaaS.
 
 ###### In this presentation I have used [oh my zsh](http://ohmyz.sh/), [docker 1.11.1](https://github.com/docker/docker/releases/tag/v1.11.1), [wharfee](https://github.com/j-bennet/wharfee) and [dry](https://github.com/moncho/dry).
 
----
-
-### Bonus!
-
-> Get the [SKGTech.io docker image](https://github.com/skgtech/skgtech.io-docker)

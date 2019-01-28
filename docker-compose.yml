@@ -1,0 +1,8 @@
+version: '3'
+services:
+  training:
+    build:
+      context: .
+    image: training:latest
+    ports: 
+      - 8060:80

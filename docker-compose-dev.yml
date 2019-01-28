@@ -1,0 +1,9 @@
+version: '3'
+services:
+  training: 
+    volumes:
+      - training-sync:/web/html:nocopy 
+
+volumes:
+  training-sync:
+    external: true
